@@ -63,25 +63,43 @@ function displayIDChoice(choice) {
     });
 }
 
-function purchaseAmount(stock) {
+function purchaseAmount(company) {
     inquirer.prompt([{
         message: "How much would you like to buy?",
         name: "purchaseAmount"
     }]).then((response) => {
-        //check if we have enough stock
-        if (response.purchaseAmount > stock.stock_quantity) {
-            console.log("We don't have that amount! We only have " + stock.stock_quantity);
-            purchaseAmount(stock);
+        //check if we have enough company stock
+        if (response.purchaseAmount > company.stock_quantity) {
+            console.log("We only have " + company.stock_quantity + " in stock.");
+            purchaseAmount(company);
         } else {
-            var stockLeft = stock.stock_quantity - response.purchaseAmount;
-            updateProduct(stockLeft, stock.item_id);
+            var stockLeft = company.stock_quantity - response.purchaseAmount;
+            var cost = company.price * response.purchaseAmount;
+            console.log(`You spent ${cost}!`);
+            updateProduct(stockLeft, company.item_id);
+
+            //check if they want to buy another product
+            inquirer.prompt([{
+                type: "list",
+                name: "continue",
+                message: "Would you like to buy another product?",
+                choices: ["Buy","Exit"]
+            }]).then((response) => {
+                switch (response.continue){
+                    case ("Buy"): {
+                        readProducts();
+                    }break;
+                    case ("Exit"): {
+                        //exit
+                    }
+                }
+            });
             //take in the users amount and update the SQL database
         }
     });
 }
 
 function updateProduct(stockLeft,stockID) {
-    console.log("Updating all Rocky Road quantities...\n");
     var query = connection.query(
         "UPDATE products SET ? WHERE ?",
         [{
@@ -92,9 +110,7 @@ function updateProduct(stockLeft,stockID) {
             }
         ],
         function (err, res) {
-            console.log(res.affectedRows + " products updated!\n");
-            // Call deleteProduct AFTER the UPDATE completes
-            // deleteProduct();
+
         }
     );
 
