@@ -90,7 +90,7 @@ function purchaseAmount(company) {
                         readProducts();
                     }break;
                     case ("Exit"): {
-                        //exit
+                        connection.end();
                     }
                 }
             });
@@ -116,4 +116,8 @@ function updateProduct(stockLeft,stockID) {
 
     // logs the actual query being run
     // console.log(query.sql);
+}
+
+module.exports = {
+    readProducts: readProducts
 }
