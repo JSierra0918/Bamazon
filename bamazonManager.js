@@ -1,7 +1,8 @@
 var inquirer = require("inquirer");
 var mysql = require("mysql");
+var Table = require('cli-table');
+
 // var bamazonCustomer = require("./bamazonCustomer");
-var fghj = []
 var connection = mysql.createConnection({
     host: "localhost",
 
@@ -112,10 +113,7 @@ function restockItem(choice) {
     }], function (err, res) {
         if (err) throw err;
 
-        // Log all results of the SELECT statement
-        console.log(`--------------------------------------------------------------------------------`);
-        console.log(`ID: ${res[0].item_id} \nProduct: ${res[0].product_name}\nName: ${res[0].department_name}\nPrice: ${res[0].price}\nItems in Stock: ${res[0].stock_quantity}`);
-        console.log(`--------------------------------------------------------------------------------`);
+        displayProducts(res);
         restockAmount(res[0]);
     });
 }
@@ -153,28 +151,44 @@ function addNewProduct() {
             name: "Quantity"
         }
     ]).then((product) => {
-       connection.query("INSERT INTO products SET ?", [{
+        connection.query("INSERT INTO products SET ?", [{
             product_name: product.Name,
             department_name: product.Department,
             price: product.Price,
             stock_quantity: product.Quantity
         }], (err, res) => {
             if (err) throw err;
-            console.log(`------------------------------------------------------------------------------------------`);
-            console.log("Product added to the inventory");
-            console.log(`Product Name: ${product.Name}\nProduct Department: ${product.Department}\nProduct Price: ${product.Price}\nProduct Stock: ${product.Quantity}`);
-            // displayProducts();
-            console.log(`------------------------------------------------------------------------------------------`);
+
+            //Update the manager with new table.
+            
+            var table = new Table({
+                head: ["Item ID", "Product Name", "Department", "Price","Item's in Stock", " Product Sales"],
+                colWidths: [10, 20, 20, 20,20,20]
+              });
+
+            table.push([product.item_id,product.product_name,product.department_name,product.price,product.stock_quantity,product.product_sales]);
+
+            console.log(table.toString());
+
             bamazonManager();
         })
-    
+
     });
 }
 
 function displayProducts(res) {
+    var table = new Table({
+        head: ["Item ID", "Product Name", "Department", "Price","Item's in Stock", " Product Sales"],
+        colWidths: [10, 20, 20, 20,20,20]
+      });
+
     res.forEach(item => {
         //   console.log(item);
-        console.log(`ID: ${item.item_id} | Product: ${item.product_name} | Department: ${item.department_name}| Price: ${item.price} | Number in Stock: ${item.stock_quantity} `);
-        console.log(`---------------------------------------\n`);
+        // console.log(`ID: ${item.item_id} | Product: ${item.product_name} | Department: ${item.department_name}| Price: ${item.price} | Number in Stock: ${item.stock_quantity} `);
+        // console.log(`---------------------------------------\n`);
+
+        table.push([item.item_id,item.product_name,item.department_name,item.price,item.stock_quantity,item.product_sales])
     });
+
+    console.log(table.toString());
 }

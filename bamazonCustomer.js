@@ -1,5 +1,7 @@
 var inquirer = require("inquirer");
 var mysql = require("mysql");
+var Table = require('cli-table');
+
 var connection = mysql.createConnection({
     host: "localhost",
 
@@ -24,18 +26,13 @@ function bamazon() {
 
 }
 
-
 //FUNCTIONS
 function readProducts() {
     console.log("My Bamazon Products...\n");
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
         // Log all results of the SELECT statement
-        res.forEach(item => {
-            //   console.log(item);
-            console.log(`ID: ${item.item_id} | Product: ${item.product_name} | Department: ${item.department_name}| Price: ${item.price} | Number in Stock: ${item.stock_quantity} `);
-            console.log(`---------------------------------------\n`);
-        });
+        displayProducts(res);
         buyStuff();
         // connection.end();
     });
@@ -56,9 +53,8 @@ function displayIDChoice(choice) {
         item_id: choice
     }], function (err, res) {
         if (err) throw err;
-        console.log(`ID: ${res[0].item_id} \nProduct: ${res[0].product_name}\nName: ${res[0].department_name}\nPrice: ${res[0].price}\nItems in Stock: ${res[0].stock_quantity}`);
+        displayProducts(res);
         // Log all results of the SELECT statement
-
         purchaseAmount(res[0]);
     });
 }
@@ -66,7 +62,14 @@ function displayIDChoice(choice) {
 function purchaseAmount(company) {
     inquirer.prompt([{
         message: "How much would you like to buy?",
-        name: "purchaseAmount"
+        name: "purchaseAmount",
+        validate: (value) => {
+            if (isNaN(value) === false) {
+                return true;
+            }
+
+            return false;
+        }
     }]).then((response) => {
         //check if we have enough company stock
         if (response.purchaseAmount > company.stock_quantity) {
@@ -74,24 +77,28 @@ function purchaseAmount(company) {
             purchaseAmount(company);
         } else {
             var stockLeft = company.stock_quantity - response.purchaseAmount;
-            var cost = company.price * response.purchaseAmount;
-            console.log(`You spent ${cost}!`);
-            updateProduct(stockLeft, company.item_id);
+            var cost = company.price * parseInt(response.purchaseAmount);
+
+            console.log(`You spent ${cost} dollars!`);
+            updateProduct(stockLeft, company.item_id, cost);
 
             //check if they want to buy another product
             inquirer.prompt([{
                 type: "list",
                 name: "continue",
                 message: "Would you like to buy another product?",
-                choices: ["Buy","Exit"]
+                choices: ["Buy", "Exit"]
             }]).then((response) => {
-                switch (response.continue){
-                    case ("Buy"): {
-                        readProducts();
-                    }break;
-                    case ("Exit"): {
-                        connection.end();
-                    }
+                switch (response.continue) {
+                    case ("Buy"):
+                        {
+                            readProducts();
+                        }
+                        break;
+                    case ("Exit"):
+                        {
+                            connection.end();
+                        }
                 }
             });
             //take in the users amount and update the SQL database
@@ -99,11 +106,11 @@ function purchaseAmount(company) {
     });
 }
 
-function updateProduct(stockLeft,stockID) {
-    var query = connection.query(
+function updateProduct(stockLeft, stockID, productSale) {
+    connection.query(
         "UPDATE products SET ? WHERE ?",
         [{
-            stock_quantity: stockLeft
+                stock_quantity: stockLeft
             },
             {
                 item_id: stockID
@@ -114,10 +121,32 @@ function updateProduct(stockLeft,stockID) {
         }
     );
 
-    // logs the actual query being run
-    // console.log(query.sql);
+    connection.query(
+        "INSERT INTO products SET ? WHERE ?",
+        [{
+                product_sales: productSale
+            },
+            {
+                item_id: stockID
+            }
+
+        ],
+        function (err, res) {
+
+        }
+    );
 }
 
-module.exports = {
-    readProducts: readProducts
+function displayProducts(res) {
+    var table = new Table({
+        head: ["Item ID", "Product Name", "Department", "Price", "Item's in Stock", "Purchase Amount" ],
+        colWidths: [10, 20, 20, 20, 20, 20]
+    });
+
+    //Display each product
+    res.forEach(item => {
+        table.push([item.item_id, item.product_name, item.department_name, item.price, item.stock_quantity, item.product_sales])
+    });
+
+    console.log(table.toString());
 }
