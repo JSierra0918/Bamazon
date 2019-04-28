@@ -121,8 +121,8 @@ function updateProduct(stockLeft, stockID, productSale) {
         }
     );
 
-    connection.query(
-        "INSERT INTO products SET ? WHERE ?",
+  var query =  connection.query(
+        "UPDATE products SET ? WHERE ?",
         [{
                 product_sales: productSale
             },
@@ -135,6 +135,8 @@ function updateProduct(stockLeft, stockID, productSale) {
 
         }
     );
+
+    console.log(query.sql);
 }
 
 function displayProducts(res) {
