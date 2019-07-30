@@ -10,7 +10,7 @@ an Amazon-like storefront using MySQL and NODE.js . The app will take in orders 
 * mySQL
 
 ## Getting Started
-Install the NPM packges by using the command ```npm install```
+Install the NPM packages by using the command ```npm install```
 *check your package.json and make sure the dependencies installed correctly.
 
 ## Running the program
